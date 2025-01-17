@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from paddleocr import PaddleOCR
 import json
+from cleaner import clean_license_plates, vote_plate_number 
 
 def increase_resolution(plate_img, scale_factor=2):
     # Tăng kích thước ảnh bằng super resolution
@@ -112,5 +113,8 @@ if __name__ == "__main__":
             break
     
     cv2.destroyAllWindows()
-    print(len(plate_nums))
+    # print(len(plate_nums))
     print(plate_nums)
+    cleaned_plates = clean_license_plates(plate_nums)
+    result, details = vote_plate_number(cleaned_plates)
+    print(f"Voted plate number: {result}")
