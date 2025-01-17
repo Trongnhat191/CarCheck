@@ -7,19 +7,12 @@ from paddleocr import PaddleOCR
 import json
 from cleaner import clean_license_plates, vote_plate_number 
 
-def increase_resolution(plate_img, scale_factor=2):
-    # Tăng kích thước ảnh bằng super resolution
-    # Sử dụng INTER_CUBIC cho kết quả tốt với text
-    high_res = cv2.resize(plate_img, None, 
-                         fx=scale_factor, 
-                         fy=scale_factor, 
-                         interpolation=cv2.INTER_CUBIC)
-    
-    return high_res
+SAN_TRUOC_2 = np.array([[123, 256],[321, 713],[842, 405],[422, 151]]) #0, 2, 3
+KHOANG_RUA_2 = np.array([[679, 162], [880, 240],[981, 66],[854, 28]])#1, 6
+CERAMIC = np.array([[584, 221],[455, 688],[878, 696],[772, 225]])#4
+KHOANG_RUA_1 = np.array([[663,80],[669, 233],[848, 233],[819,89]])#5
+POLYGON_ZONE = SAN_TRUOC_2
 
-SOURCE_video = np.array([[123, 256],[321, 713],[917, 359],[501, 120]])
-ocr = PaddleOCR(lang='vi', show_log = False)
-plate_nums = []
 def parse_argument() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Supervision of a process",
@@ -31,6 +24,25 @@ def parse_argument() -> argparse.Namespace:
         type = str,
     )
     return parser.parse_args()
+
+def increase_resolution(plate_img, scale_factor=3):
+    # Tăng kích thước ảnh bằng super resolution
+    # Sử dụng INTER_CUBIC cho kết quả tốt với text
+    high_res = cv2.resize(plate_img, None, 
+                         fx=scale_factor, 
+                         fy=scale_factor, 
+                         interpolation=cv2.INTER_CUBIC)
+    
+    return high_res
+
+def process_ocr_output(plate_num):
+    res = ''
+    for i in plate_num[0]:
+        res += i[1][0]
+    return res
+
+ocr = PaddleOCR(lang='vi', show_log = False)
+plate_nums = []
 
 if __name__ == "__main__":
     args = parse_argument()
@@ -53,7 +65,7 @@ if __name__ == "__main__":
     frame_generator = sv.get_video_frames_generator(args.source_video_path)
 
     polygon_zone = sv.PolygonZone(
-        SOURCE_video,
+        POLYGON_ZONE,
         # frame_resolution_wh=video_info.resolution_wh
     )
     for frame in frame_generator:
@@ -85,9 +97,10 @@ if __name__ == "__main__":
             # print(f"x_min: {plate_x_min}, y_min: {plate_y_min}, x_max: {plate_x_max}, y_max: {plate_y_max}")
             # plate_crop_img = car_frame[plate_y_min:plate_y_max, plate_x_min:plate_x_max]
             plate_num = ocr.ocr(plate_img)
-            print(plate_num)
+            res_num = process_ocr_output(plate_num)
             # if plate_num != [None]:
-            plate_nums.append(plate_num[0][0][1][0])
+            # for i in 
+            plate_nums.append(res_num)
 
             # print(plate_detections.data['class_name'][1])
         except:
@@ -100,7 +113,7 @@ if __name__ == "__main__":
             in detections.tracker_id
         ]
         annotated_frame = frame.copy()
-        annotated_frame = sv.draw_polygon(annotated_frame, polygon = SOURCE_video, color = sv.Color(255, 0, 0), thickness = thickness)
+        annotated_frame = sv.draw_polygon(annotated_frame, polygon = POLYGON_ZONE, color = sv.Color(255, 0, 0), thickness = thickness)
         annotated_frame = bounding_box_annotator.annotate(
             scene=annotated_frame, detections=detections
         )
@@ -111,10 +124,14 @@ if __name__ == "__main__":
         cv2.imshow("name",annotated_frame)
         if cv2.waitKey(1) == ord('q'):
             break
-    
+    # print("Nhấn 'q' để đóng tất cả cửa sổ...")
+    # while True:
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
     cv2.destroyAllWindows()
     # print(len(plate_nums))
-    print(plate_nums)
+    # print(plate_nums)
+
     cleaned_plates = clean_license_plates(plate_nums)
     result, details = vote_plate_number(cleaned_plates)
     print(f"Voted plate number: {result}")

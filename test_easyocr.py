@@ -41,7 +41,7 @@ model_path = 'models/yolov8/detect/train/weights/best.pt'
 model = YOLO('yolov8n.pt')#for car
 model1 = YOLO(model_path)#for plate
 
-img_path = 'cars/car132.png'
+img_path = 'images/car2.png'
 img = cv2.imread(img_path)
 cv2.imshow('img', img)
 
@@ -72,6 +72,7 @@ cv2.imshow('plate', plate_img)
 
 import cv2
 import numpy as np
+from car_check import process_ocr_output
 
 def increase_resolution(plate_img, scale_factor=2):
     # Tăng kích thước ảnh bằng super resolution
@@ -95,6 +96,7 @@ cv2.destroyAllWindows()
 # Cập nhật biến plate_img với ảnh độ phân giải cao
 plate_img = high_res_plate
 res = ocr.ocr(plate_img)
+res = process_ocr_output(res)
 print(res)
 # plate_num =  res[0][0][1][0]
 # print(plate_num)

@@ -14,9 +14,9 @@ def clean_license_plates(plate_numbers):
     # unique_plates = list(dict.fromkeys(cleaned_plates))
     res = []
     for i in cleaned_plates:
-        
-        if i[2].isalpha() and i[2].isupper():
-            res.append(i)
+        if (len(i) > 6) and (len(i) < 9):
+            if i[2].isalpha() and i[2].isupper():
+                res.append(i)
 
     return res
 
